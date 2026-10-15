@@ -45,6 +45,9 @@
 		.sidebar-bottom p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 		.main { min-width: 0; padding: 29px clamp(22px, 5vw, 72px) 60px; }
 		.topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; max-width: 1120px; margin: 0 auto 38px; }
+				.top-actions { display: flex; align-items: center; gap: 10px; }
+				.account-status { max-width: 220px; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+				.account-button { min-height: 34px; padding: 0 11px; font-size: 10px; }
 		.eyebrow { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .2px; }
 		.topbar-date { color: #536158; font-size: 12px; }
 		.avatar { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #e2e7df; border-radius: 50%; background: var(--yellow); color: #57502d; font-size: 11px; font-weight: 700; }
@@ -144,6 +147,8 @@
 		.example-row .example-input { flex: 1; }
 		.remove-example { flex: none; width: 31px; height: 31px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: #8b746e; font-size: 14px; }
 		.modal-footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #edf0eb; }
+				.auth-note { margin: 14px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+				.auth-error { min-height: 18px; margin: 5px 0 0; color: #a74432; font-size: 11px; line-height: 1.5; }
 		.toast { position: fixed; z-index: 20; right: 24px; bottom: 24px; display: flex; align-items: center; gap: 10px; padding: 14px 18px; border: 1px solid #d6e9db; border-radius: 8px; background: #fff; box-shadow: var(--shadow); color: var(--green-dark); font-size: 12px; font-weight: 700; animation: toastIn .25s ease both; }
 		.toast-mark { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--lime); font-size: 12px; }
 		@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -163,6 +168,8 @@
 		@media (max-width: 600px) {
 			.main { padding: 18px 15px 28px; }
 			.topbar { margin-bottom: 25px; }
+						.account-status, .avatar { display: none; }
+						.account-button { min-height: 32px; padding: 0 9px; }
 			.page-heading { align-items: start; }
 			.page-heading .button { flex: none; min-height: 37px; padding: 0 10px; font-size: 10px; }
 			.lower-grid { grid-template-columns: 1fr; }
@@ -198,15 +205,23 @@
 			<div class="sidebar-bottom"><strong>A little every day.</strong><p>Build a lasting English habit, one useful word at a time.</p></div>
 		</aside>
 		<main class="main">
-			<header class="topbar"><div><div class="eyebrow">YOUR ENGLISH, ONE WORD AT A TIME</div><div class="topbar-date" id="today-label"></div></div><span class="avatar" aria-label="Vietnamese learner">VN</span></header>
+			<header class="topbar"><div><div class="eyebrow">YOUR ENGLISH, ONE WORD AT A TIME</div><div class="topbar-date" id="today-label"></div></div><div class="top-actions"><span class="account-status" id="account-status">Saved on this device</span><button class="button secondary account-button" data-action="account">Set up sync</button><span class="avatar" aria-label="Vietnamese learner">VN</span></div></header>
 			<div class="content" id="app-content"></div>
 		</main>
 	</div>
 	<div id="modal-root"></div>
 	<div id="toast-root" aria-live="polite" aria-atomic="true"></div>
 
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script>
 		const STORAGE_KEY = 'wordwell.cards.v1';
+		const SYNCED_USER_KEY = 'wordwell.synced-user.v1';
+		const OWNER_USER_KEY = 'wordwell.owner-user.v1';
+		const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+		const SUPABASE_PUBLISHABLE_KEY = 'YOUR_SUPABASE_PUBLISHABLE_KEY';
+		const supabaseClient = window.supabase?.createClient && SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR_') && !SUPABASE_PUBLISHABLE_KEY.includes('YOUR_')
+			? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+			: null;
 		const GOAL = 10;
 		const REVIEW_DAYS = [1, 3, 5, 10, 20];
 		const TYPES = ['noun', 'verb', 'adj', 'adv', 'idiom'];
@@ -216,6 +231,10 @@
 		let studyIndex = 0;
 		let isFlipped = false;
 		let toastTimer;
+		let cloudUser = null;
+		let activeSyncUserId = null;
+		let syncingUserId = null;
+		let authMode = 'signin';
 
 		function loadCards() {
 			try {
@@ -226,6 +245,151 @@
 
 		function saveCards() {
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+		}
+
+		function updateAccountUI(statusText) {
+			const status = document.getElementById('account-status');
+			const button = document.querySelector('.account-button');
+			if (!status || !button) return;
+			status.textContent = statusText || (cloudUser ? `Synced as ${cloudUser.email}` : supabaseClient ? 'Cloud sync is off' : 'Saved on this device');
+			button.textContent = cloudUser ? 'Account' : supabaseClient ? 'Sign in to sync' : 'Set up sync';
+		}
+
+		function cardToRow(card, userId) {
+			return {
+				id: card.id,
+				user_id: userId,
+				word: card.word,
+				type: card.type,
+				vi_examples: card.viExamples || [],
+				en_examples: card.enExamples || [],
+				created_date: card.createdDate,
+				created_at: card.createdAt,
+				review_count: card.reviewCount || 0,
+				studied_dates: card.studiedDates || []
+			};
+		}
+
+		function rowToCard(row) {
+			return {
+				id: row.id,
+				word: row.word,
+				type: row.type,
+				viExamples: row.vi_examples || [],
+				enExamples: row.en_examples || [],
+				createdDate: row.created_date,
+				createdAt: row.created_at,
+				reviewCount: row.review_count || 0,
+				studiedDates: row.studied_dates || []
+			};
+		}
+
+		function mergeCards(remoteCards, localCards) {
+			const merged = new Map(remoteCards.map(card => [card.id, card]));
+			for (const localCard of localCards) {
+				const remoteCard = merged.get(localCard.id);
+				if (!remoteCard) {
+					merged.set(localCard.id, localCard);
+					continue;
+				}
+				merged.set(localCard.id, {
+					...remoteCard,
+					...localCard,
+					studiedDates: [...new Set([...(remoteCard.studiedDates || []), ...(localCard.studiedDates || [])])].sort(),
+					reviewCount: Math.max(remoteCard.reviewCount || 0, localCard.reviewCount || 0)
+				});
+			}
+			return [...merged.values()];
+		}
+
+		async function syncUserCards(user, force = false) {
+			if (!supabaseClient || !user || (!force && activeSyncUserId === user.id) || syncingUserId === user.id) return;
+			syncingUserId = user.id;
+			cloudUser = user;
+			updateAccountUI('Syncing cards…');
+			try {
+				const previousOwner = localStorage.getItem(OWNER_USER_KEY);
+				if (previousOwner && previousOwner !== user.id) {
+					cards = [];
+					saveCards();
+					localStorage.removeItem(SYNCED_USER_KEY);
+				}
+				const localCards = [...cards];
+				const { data, error } = await supabaseClient.from('flashcards').select('*').eq('user_id', user.id);
+				if (error) throw error;
+				const remoteCards = (data || []).map(rowToCard);
+				const alreadySynced = localStorage.getItem(SYNCED_USER_KEY) === user.id;
+				const syncedCards = alreadySynced ? remoteCards : mergeCards(remoteCards, localCards);
+				if (!alreadySynced && syncedCards.length) {
+					const { error: saveError } = await supabaseClient.from('flashcards').upsert(syncedCards.map(card => cardToRow(card, user.id)), { onConflict: 'id' });
+					if (saveError) throw saveError;
+				}
+				cards = syncedCards;
+				saveCards();
+				localStorage.setItem(SYNCED_USER_KEY, user.id);
+				localStorage.setItem(OWNER_USER_KEY, user.id);
+				activeSyncUserId = user.id;
+				updateAccountUI(`Synced as ${user.email}`);
+				render();
+			} catch (error) {
+				localStorage.removeItem(SYNCED_USER_KEY);
+				updateAccountUI('Sync needs setup');
+				console.error('Wordwell cloud sync failed:', error);
+				showToast('Cloud sync failed. Local data is safe.');
+			} finally {
+				syncingUserId = null;
+			}
+		}
+
+		async function saveCardToCloud(card) {
+			if (!supabaseClient || !cloudUser) return true;
+			const { error } = await supabaseClient.from('flashcards').upsert(cardToRow(card, cloudUser.id), { onConflict: 'id' });
+			if (error) {
+				localStorage.removeItem(SYNCED_USER_KEY);
+				updateAccountUI('Sync issue');
+				return false;
+			}
+			localStorage.setItem(SYNCED_USER_KEY, cloudUser.id);
+			localStorage.setItem(OWNER_USER_KEY, cloudUser.id);
+			updateAccountUI(`Synced as ${cloudUser.email}`);
+			return true;
+		}
+
+		async function deleteCardFromCloud(cardId) {
+			if (!supabaseClient || !cloudUser) return true;
+			const { error } = await supabaseClient.from('flashcards').delete().eq('id', cardId).eq('user_id', cloudUser.id);
+			if (error) {
+				updateAccountUI('Sync issue');
+				return false;
+			}
+			return true;
+		}
+
+		function initializeCloudSync() {
+			updateAccountUI();
+			if (!supabaseClient) return;
+			supabaseClient.auth.onAuthStateChange((event, session) => {
+				setTimeout(() => {
+					if (event === 'SIGNED_OUT') {
+						const signedOutId = cloudUser?.id;
+						const wasSynced = signedOutId && localStorage.getItem(OWNER_USER_KEY) === signedOutId && localStorage.getItem(SYNCED_USER_KEY) === signedOutId;
+						if (wasSynced) {
+							cards = [];
+							saveCards();
+							localStorage.removeItem(OWNER_USER_KEY);
+						}
+						localStorage.removeItem(SYNCED_USER_KEY);
+						cloudUser = null;
+						activeSyncUserId = null;
+						updateAccountUI();
+						render();
+					} else if (session?.user) {
+						cloudUser = session.user;
+						updateAccountUI('Syncing cards…');
+						void syncUserCards(session.user);
+					}
+				}, 0);
+			});
 		}
 
 		function dateKey(date = new Date()) {
@@ -356,6 +520,25 @@
 			document.getElementById('modal-root').innerHTML = '';
 		}
 
+		function openAccountModal() {
+			const root = document.getElementById('modal-root');
+			if (!supabaseClient) {
+				root.innerHTML = `<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><h2 id="modal-title">Set up cloud sync</h2><p>Your cards stay on this device until cloud sync is configured.</p></div><button class="close-button" type="button" data-action="close-modal" aria-label="Close dialog">×</button></div><p class="auth-note">Create a Supabase project, run the SQL in <strong>supabase-schema.sql</strong>, then add your project URL and publishable key in this app. See <strong>SYNC_SETUP.md</strong> for steps. Never use a service-role key here.</p><div class="modal-footer"><button class="button secondary" type="button" data-action="close-modal">Close</button></div></section></div>`;
+				return;
+			}
+			if (cloudUser) {
+				root.innerHTML = `<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><h2 id="modal-title">Cloud sync</h2><p>Signed in as ${esc(cloudUser.email)}</p></div><button class="close-button" type="button" data-action="close-modal" aria-label="Close dialog">×</button></div><p class="auth-note">Your vocabulary and study history are synced with this account.</p><div class="modal-footer"><button class="button secondary" type="button" data-action="close-modal">Close</button><button class="button secondary" type="button" data-action="sign-out">Sign out</button><button class="button" type="button" data-action="sync-now">Sync now</button></div></section></div>`;
+				return;
+			}
+			authMode = 'signin';
+			renderAuthModal();
+		}
+
+		function renderAuthModal() {
+			document.getElementById('modal-root').innerHTML = `<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><h2 id="modal-title">${authMode === 'signup' ? 'Create a sync account' : 'Sign in to sync'}</h2><p>Your account makes your cards available on your other devices.</p></div><button class="close-button" type="button" data-action="close-modal" aria-label="Close dialog">×</button></div><form id="auth-form"><div class="field"><label for="auth-email">Email</label><input id="auth-email" name="email" type="email" autocomplete="email" required></div><div class="field"><label for="auth-password">Password</label><input id="auth-password" name="password" type="password" minlength="8" autocomplete="${authMode === 'signup' ? 'new-password' : 'current-password'}" required></div><p class="auth-error" id="auth-error" role="status"></p><div class="modal-footer"><button class="button text-button" type="button" data-action="toggle-auth">${authMode === 'signup' ? 'Already have an account? Sign in' : 'Create an account'}</button><button class="button" type="submit">${authMode === 'signup' ? 'Create account' : 'Sign in'}</button></div></form><p class="auth-note">Use this same email and password on every device. Your password is managed by Supabase.</p></section></div>`;
+			document.getElementById('auth-email').focus();
+		}
+
 		function showToast(message) {
 			const root = document.getElementById('toast-root');
 			root.innerHTML = `<div class="toast"><span class="toast-mark" aria-hidden="true">✓</span>${esc(message)}</div>`;
@@ -370,11 +553,15 @@
 			setView('study');
 		}
 
-		document.addEventListener('click', event => {
+		document.addEventListener('click', async event => {
 			const button = event.target.closest('[data-action]');
 			if (!button) return;
 			const action = button.dataset.action;
 			if (action === 'new-card') openCardModal();
+			if (action === 'account') openAccountModal();
+			if (action === 'toggle-auth') { authMode = authMode === 'signin' ? 'signup' : 'signin'; renderAuthModal(); }
+			if (action === 'sync-now') { closeModal(); activeSyncUserId = null; await syncUserCards(cloudUser, true); }
+			if (action === 'sign-out') { const { error } = await supabaseClient.auth.signOut(); if (error) showToast('Could not sign out. Try again.'); else closeModal(); }
 			if (action === 'close-modal') closeModal();
 			if (action === 'backdrop-close' && event.target === button) closeModal();
 			if (action === 'start-study') startStudy();
@@ -406,12 +593,14 @@
 					if (dayAge(card.createdDate) > 0) card.reviewCount = Math.min((card.reviewCount || 0) + 1, REVIEW_DAYS.length);
 				}
 				saveCards();
+				if (!await saveCardToCloud(card)) showToast('Study history saved here; cloud sync failed.');
 				studyIndex += 1;
 				renderStudyCard();
 			}
 			if (action === 'delete-card') {
 				const card = cards.find(item => item.id === button.dataset.id);
 				if (card && confirm(`Delete “${card.word}” and its examples?`)) {
+					if (!await deleteCardFromCloud(card.id)) { showToast('Delete failed to sync; the card was kept.'); return; }
 					cards = cards.filter(item => item.id !== card.id);
 					saveCards();
 					render();
@@ -419,7 +608,24 @@
 			}
 		});
 
-		document.addEventListener('submit', event => {
+		document.addEventListener('submit', async event => {
+			if (event.target.id === 'auth-form') {
+				event.preventDefault();
+				const formData = new FormData(event.target);
+				const credentials = { email: String(formData.get('email')).trim(), password: String(formData.get('password')) };
+				const result = authMode === 'signup'
+					? await supabaseClient.auth.signUp(credentials)
+					: await supabaseClient.auth.signInWithPassword(credentials);
+				const errorMessage = document.getElementById('auth-error');
+				if (result.error) { errorMessage.textContent = result.error.message; return; }
+				if (authMode === 'signup' && !result.data.session) {
+					errorMessage.textContent = 'Check your email to confirm your account, then sign in.';
+					return;
+				}
+				closeModal();
+				showToast(authMode === 'signup' ? 'Account created. Syncing your cards.' : 'Signed in. Syncing your cards.');
+				return;
+			}
 			if (event.target.id !== 'card-form') return;
 			event.preventDefault();
 			const form = event.target;
@@ -440,9 +646,11 @@
 			if (!card.word || !card.viExamples.length || !card.enExamples.length) return;
 			cards.push(card);
 			saveCards();
+			const synced = await saveCardToCloud(card);
 			closeModal();
 			render();
-			if (before < GOAL && getCreatedToday() >= GOAL) showToast('Goal complete');
+			if (!synced) showToast('Card saved on this device; cloud sync failed.');
+			else if (before < GOAL && getCreatedToday() >= GOAL) showToast('Goal complete');
 			else showToast('Flashcard saved');
 		});
 
@@ -462,6 +670,10 @@
 
 		document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
 		render();
+		initializeCloudSync();
+		window.addEventListener('focus', () => {
+			if (cloudUser) { activeSyncUserId = null; void syncUserCards(cloudUser); }
+		});
 	</script>
 </body>
 </html>
