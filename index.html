@@ -96,10 +96,13 @@
 		.toolbar { display: flex; align-items: center; gap: 10px; }
 		.search-input { width: min(290px, 42vw); min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink); font-size: 12px; }
 		.collection-list { overflow: hidden; }
-		.collection-row { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(130px, 1fr) minmax(130px, 1fr) auto; align-items: center; gap: 18px; padding: 16px 19px; border-bottom: 1px solid #edf0eb; }
+		.collection-row { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(130px, 1fr) minmax(130px, 1fr) min-content; align-items: center; gap: 18px; padding: 16px 19px; border-bottom: 1px solid #edf0eb; }
 		.collection-row:last-child { border-bottom: 0; }
+		.collection-actions { display: flex; align-items: center; gap: 3px; }
 		.collection-examples { overflow: hidden; color: #66736a; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 		.collection-examples small { display: block; margin-bottom: 5px; color: #9aa29c; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+		.edit-button { padding: 7px 9px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--green); font-size: 10px; font-weight: 600; }
+		.edit-button:hover { border-color: var(--line); background: #f5f7f2; }
 		.delete-button { padding: 7px 9px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #9b6c60; font-size: 10px; font-weight: 600; }
 		.delete-button:hover { border-color: #f1d9d1; background: #fff0eb; }
 		.empty-state { padding: 42px 20px; text-align: center; }
@@ -235,6 +238,7 @@
 		let activeSyncUserId = null;
 		let syncingUserId = null;
 		let authMode = 'signin';
+		let editingCardId = null;
 
 		function loadCards() {
 			try {
@@ -469,7 +473,7 @@
 		}
 
 		function collectionTemplate() {
-			const rows = cards.length ? [...cards].sort((a, b) => b.createdDate.localeCompare(a.createdDate) || b.createdAt.localeCompare(a.createdAt)).map(card => `<article class="collection-row" data-word="${esc(card.word.toLowerCase())}"><div><div class="word-line"><strong>${esc(card.word)}</strong><span class="part-tag">${esc(card.type)}</span></div></div><div class="collection-examples"><small>Vietnamese</small>${esc((card.viExamples || []).join(' · ') || '—')}</div><div class="collection-examples english-examples"><small>English</small>${esc((card.enExamples || []).join(' · ') || '—')}</div><button class="delete-button" data-action="delete-card" data-id="${esc(card.id)}" aria-label="Delete ${esc(card.word)}">Delete</button></article>`).join('') : `<div class="empty-state"><h3>Your word list starts here.</h3><p>Add vocabulary with Vietnamese prompts and English examples. Your cards are saved on this device.</p><button class="button" data-action="new-card">Add your first word</button></div>`;
+			const rows = cards.length ? [...cards].sort((a, b) => b.createdDate.localeCompare(a.createdDate) || b.createdAt.localeCompare(a.createdAt)).map(card => `<article class="collection-row" data-word="${esc(card.word.toLowerCase())}"><div><div class="word-line"><strong>${esc(card.word)}</strong><span class="part-tag">${esc(card.type)}</span></div></div><div class="collection-examples"><small>Vietnamese</small>${esc((card.viExamples || []).join(' · ') || '—')}</div><div class="collection-examples english-examples"><small>English</small>${esc((card.enExamples || []).join(' · ') || '—')}</div><div class="collection-actions"><button class="edit-button" data-action="edit-card" data-id="${esc(card.id)}" aria-label="Edit ${esc(card.word)}">Edit</button><button class="delete-button" data-action="delete-card" data-id="${esc(card.id)}" aria-label="Delete ${esc(card.word)}">Delete</button></div></article>`).join('') : `<div class="empty-state"><h3>Your word list starts here.</h3><p>Add vocabulary with Vietnamese prompts and English examples. Your cards are saved on this device.</p><button class="button" data-action="new-card">Add your first word</button></div>`;
 			return `<section><div class="page-heading"><div><h1>My vocabulary</h1><p>${cards.length} ${cards.length === 1 ? 'word' : 'words'} in your collection</p></div><div class="toolbar">${cards.length ? '<label class="sr-only" for="search-words">Search vocabulary</label><input id="search-words" class="search-input" type="search" placeholder="Search words..." autocomplete="off">' : ''}<button class="button" data-action="new-card"><span aria-hidden="true">+</span> Add word</button></div></div><div class="panel collection-list">${rows}</div></section>`;
 		}
 
@@ -506,13 +510,19 @@
 			slot.innerHTML = flashcardTemplate(studyQueue[studyIndex], false);
 		}
 
-		function exampleInput(kind) {
+		function exampleInput(kind, value = '', removable = false) {
 			const vietnamese = kind === 'viExamples';
-			return `<div class="example-row"><input class="example-input" name="${kind}" maxlength="240" placeholder="${vietnamese ? 'e.g. Cô ấy đi đến trường mỗi ngày.' : 'e.g. She walks to school every day.'}" required><button class="remove-example" type="button" data-action="remove-example" aria-label="Remove example" hidden>×</button></div>`;
+			return `<div class="example-row"><input class="example-input" name="${kind}" maxlength="240" placeholder="${vietnamese ? 'e.g. Cô ấy đi đến trường mỗi ngày.' : 'e.g. She walks to school every day.'}" value="${esc(value)}" required><button class="remove-example" type="button" data-action="remove-example" aria-label="Remove example" ${removable ? '' : 'hidden'}>×</button></div>`;
 		}
 
-		function openCardModal() {
-			document.getElementById('modal-root').innerHTML = `<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><h2 id="modal-title">Add vocabulary</h2><p>Build a useful card with examples you will remember.</p></div><button class="close-button" type="button" data-action="close-modal" aria-label="Close dialog">×</button></div><form id="card-form"><div class="field"><label for="word-input">Vocabulary</label><input id="word-input" name="word" maxlength="80" placeholder="e.g. school" required autocomplete="off"></div><div class="field"><label for="type-input">Type of vocabulary</label><select id="type-input" name="type" required>${TYPES.map(type => `<option value="${type}">${type === 'adj' ? 'adjective' : type === 'adv' ? 'adverb' : type}</option>`).join('')}</select></div><div class="example-section"><div class="example-heading"><label>Vietnamese example</label><button class="button text-button" type="button" data-action="add-example" data-kind="viExamples">+ Add another</button></div><div class="example-stack" data-examples="viExamples">${exampleInput('viExamples')}</div></div><div class="example-section"><div class="example-heading"><label>English example</label><button class="button text-button" type="button" data-action="add-example" data-kind="enExamples">+ Add another</button></div><div class="example-stack" data-examples="enExamples">${exampleInput('enExamples')}</div></div><div class="modal-footer"><button class="button secondary" type="button" data-action="close-modal">Cancel</button><button class="button" type="submit">Save flashcard</button></div></form></section></div>`;
+		function openCardModal(card = null) {
+			editingCardId = card?.id || null;
+			const isEditing = Boolean(editingCardId);
+			const viExamples = card?.viExamples?.length ? card.viExamples : [''];
+			const enExamples = card?.enExamples?.length ? card.enExamples : [''];
+			const viInputs = viExamples.map((example, index) => exampleInput('viExamples', example, index > 0)).join('');
+			const enInputs = enExamples.map((example, index) => exampleInput('enExamples', example, index > 0)).join('');
+			document.getElementById('modal-root').innerHTML = `<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><h2 id="modal-title">${isEditing ? 'Edit vocabulary' : 'Add vocabulary'}</h2><p>${isEditing ? 'Update this card without changing its review schedule.' : 'Build a useful card with examples you will remember.'}</p></div><button class="close-button" type="button" data-action="close-modal" aria-label="Close dialog">×</button></div><form id="card-form"><div class="field"><label for="word-input">Vocabulary</label><input id="word-input" name="word" maxlength="80" placeholder="e.g. school" value="${esc(card?.word || '')}" required autocomplete="off"></div><div class="field"><label for="type-input">Type of vocabulary</label><select id="type-input" name="type" required>${TYPES.map(type => `<option value="${type}" ${card?.type === type ? 'selected' : ''}>${type === 'adj' ? 'adjective' : type === 'adv' ? 'adverb' : type}</option>`).join('')}</select></div><div class="example-section"><div class="example-heading"><label>Vietnamese example</label><button class="button text-button" type="button" data-action="add-example" data-kind="viExamples">+ Add another</button></div><div class="example-stack" data-examples="viExamples">${viInputs}</div></div><div class="example-section"><div class="example-heading"><label>English example</label><button class="button text-button" type="button" data-action="add-example" data-kind="enExamples">+ Add another</button></div><div class="example-stack" data-examples="enExamples">${enInputs}</div></div><div class="modal-footer"><button class="button secondary" type="button" data-action="close-modal">Cancel</button><button class="button" type="submit">${isEditing ? 'Save changes' : 'Save flashcard'}</button></div></form></section></div>`;
 			document.getElementById('word-input').focus();
 		}
 
@@ -558,6 +568,10 @@
 			if (!button) return;
 			const action = button.dataset.action;
 			if (action === 'new-card') openCardModal();
+						if (action === 'edit-card') {
+							const card = cards.find(item => item.id === button.dataset.id);
+							if (card) openCardModal(card);
+						}
 			if (action === 'account') openAccountModal();
 			if (action === 'toggle-auth') { authMode = authMode === 'signin' ? 'signup' : 'signin'; renderAuthModal(); }
 			if (action === 'sync-now') { closeModal(); activeSyncUserId = null; await syncUserCards(cloudUser, true); }
@@ -644,6 +658,23 @@
 				studiedDates: []
 			};
 			if (!card.word || !card.viExamples.length || !card.enExamples.length) return;
+			if (editingCardId) {
+				const existingCard = cards.find(item => item.id === editingCardId);
+				if (!existingCard) { closeModal(); showToast('This card is no longer available.'); return; }
+				Object.assign(existingCard, {
+					word: card.word,
+					type: card.type,
+					viExamples: card.viExamples,
+					enExamples: card.enExamples
+				});
+				saveCards();
+				const synced = await saveCardToCloud(existingCard);
+				editingCardId = null;
+				closeModal();
+				render();
+				showToast(synced ? 'Flashcard updated' : 'Changes saved here; cloud sync failed.');
+				return;
+			}
 			cards.push(card);
 			saveCards();
 			const synced = await saveCardToCloud(card);
