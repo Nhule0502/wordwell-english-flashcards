@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#f5f6f2">
+	<title>Wordwell | English vocabulary practice</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+	<style>
+		:root {
+			color-scheme: light;
+			--paper: #f5f6f2;
+			--white: #fff;
+			--ink: #202923;
+			--muted: #758078;
+			--line: #e3e7df;
+			--green: #245d49;
+			--green-dark: #1a4838;
+			--mint: #e2f1e7;
+			--lime: #d8f06a;
+			--coral: #ee785d;
+			--yellow: #f4e7a5;
+			--shadow: 0 18px 50px rgba(36, 54, 42, .08);
+			font-family: 'DM Sans', sans-serif;
+			font-synthesis: none;
+			text-rendering: optimizeLegibility;
+		}
+		* { box-sizing: border-box; }
+		body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--paper); color: var(--ink); }
+		button, input, select { font: inherit; }
+		button { cursor: pointer; }
+		button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(36, 93, 73, .25); outline-offset: 2px; }
+		.app-shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+		.sidebar { display: flex; flex-direction: column; padding: 30px 18px 22px; background: #fff; border-right: 1px solid var(--line); }
+		.side-label { margin: 15px 12px 12px; color: #9aa29c; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+		.nav { display: grid; gap: 5px; }
+		.nav-button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; border: 0; border-radius: 9px; background: transparent; color: #647067; text-align: left; font-size: 13px; font-weight: 600; }
+		.nav-button:hover { background: #f5f7f2; color: var(--ink); }
+		.nav-button.active { background: var(--mint); color: var(--green-dark); }
+		.nav-icon { display: grid; place-items: center; width: 20px; font-size: 16px; }
+		.sidebar-bottom { margin-top: auto; padding: 15px 13px; border-radius: 10px; background: #f6f7f3; }
+		.sidebar-bottom strong { display: block; margin-bottom: 5px; font-size: 12px; }
+		.sidebar-bottom p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+		.main { min-width: 0; padding: 29px clamp(22px, 5vw, 72px) 60px; }
+		.topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; max-width: 1120px; margin: 0 auto 38px; }
+		.eyebrow { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .2px; }
+		.topbar-date { color: #536158; font-size: 12px; }
+		.avatar { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #e2e7df; border-radius: 50%; background: var(--yellow); color: #57502d; font-size: 11px; font-weight: 700; }
+		.content { max-width: 1120px; margin: 0 auto; animation: enter .35s ease both; }
+		@keyframes enter { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+		.page-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 27px; }
+		h1, h2, h3, p { margin-top: 0; }
+		h1 { margin-bottom: 7px; font-family: 'Newsreader', Georgia, serif; font-size: clamp(32px, 4vw, 43px); font-weight: 500; line-height: 1.08; }
+		.page-heading p { margin: 0; color: var(--muted); font-size: 13px; }
+		.button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 40px; padding: 0 15px; border: 1px solid transparent; border-radius: 7px; background: var(--green); color: #fff; font-size: 12px; font-weight: 700; transition: background .16s, transform .16s; }
+		.button:hover { transform: translateY(-1px); background: var(--green-dark); }
+		.button.secondary { border-color: var(--line); background: #fff; color: var(--ink); }
+		.button.secondary:hover { background: #f8faf6; }
+		.button.text-button { min-height: auto; padding: 6px 0; border: 0; background: transparent; color: var(--green); }
+		.button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+		.panel { border: 1px solid var(--line); border-radius: 10px; background: var(--white); }
+		.goal-panel { display: grid; grid-template-columns: minmax(0, 1fr) 144px; align-items: center; gap: 24px; min-height: 174px; padding: 24px 30px; overflow: hidden; background: var(--green); color: #fff; }
+		.goal-panel .eyebrow { color: #c4d8c9; }
+		.goal-panel h2 { max-width: 370px; margin: 17px 0 8px; font-family: 'Newsreader', Georgia, serif; font-size: 29px; font-weight: 500; line-height: 1.08; }
+		.goal-panel p { max-width: 350px; margin: 9px 0 0; color: #c7d7cd; font-size: 12px; line-height: 1.6; }
+		.goal-meter { display: grid; place-items: center; width: 126px; height: 126px; justify-self: center; border-radius: 50%; background: conic-gradient(var(--lime) var(--progress, 0%), rgba(255,255,255,.18) 0); }
+		.goal-meter::before { grid-area: 1 / 1; width: 102px; height: 102px; border-radius: 50%; background: var(--green); content: ''; }
+		.goal-count { z-index: 1; grid-area: 1 / 1; text-align: center; }
+		.goal-count strong { display: block; font-size: 25px; line-height: 1; }
+		.goal-count span { display: block; margin-top: 5px; color: #c7d7cd; font-size: 10px; }
+		.goal-complete .goal-panel { background: #234d3d; }
+		.goal-complete .goal-count strong { color: var(--lime); }
+		.section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 29px 0 13px; }
+		.section-heading h2 { margin: 0; font-size: 14px; font-weight: 700; }
+		.section-heading span { color: var(--muted); font-size: 11px; }
+		.lower-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(245px, .8fr); gap: 16px; }
+		.list-panel { padding: 4px 20px; }
+		.list-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 15px 0; border-bottom: 1px solid #edf0eb; }
+		.list-row:last-child { border-bottom: 0; }
+		.word-line { display: flex; align-items: center; gap: 9px; }
+		.word-line strong { font-size: 13px; }
+		.part-tag { padding: 4px 7px; border-radius: 4px; background: var(--mint); color: var(--green); font-size: 9px; font-weight: 700; text-transform: lowercase; }
+		.row-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+		.row-date { flex: none; color: #8a938c; font-size: 10px; }
+		.empty-inline { padding: 22px 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+		.review-panel { display: flex; flex-direction: column; justify-content: space-between; min-height: 138px; padding: 20px; background: #eef5ef; }
+		.review-panel .eyebrow { color: #617d69; }
+		.review-number { margin: 10px 0 3px; color: var(--green); font-family: 'Newsreader', Georgia, serif; font-size: 39px; line-height: 1; }
+		.review-panel p { margin: 0; color: #66766a; font-size: 11px; }
+		.review-panel .button { align-self: flex-start; margin-top: 14px; }
+		.toolbar { display: flex; align-items: center; gap: 10px; }
+		.search-input { width: min(290px, 42vw); min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink); font-size: 12px; }
+		.collection-list { overflow: hidden; }
+		.collection-row { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(130px, 1fr) minmax(130px, 1fr) auto; align-items: center; gap: 18px; padding: 16px 19px; border-bottom: 1px solid #edf0eb; }
+		.collection-row:last-child { border-bottom: 0; }
+		.collection-examples { overflow: hidden; color: #66736a; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+		.collection-examples small { display: block; margin-bottom: 5px; color: #9aa29c; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+		.delete-button { padding: 7px 9px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #9b6c60; font-size: 10px; font-weight: 600; }
+		.delete-button:hover { border-color: #f1d9d1; background: #fff0eb; }
+		.empty-state { padding: 42px 20px; text-align: center; }
+		.empty-state h3 { margin-bottom: 8px; font-family: 'Newsreader', Georgia, serif; font-size: 23px; font-weight: 500; }
+		.empty-state p { max-width: 390px; margin: 0 auto 18px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+		.study-layout { display: grid; grid-template-columns: minmax(0, 1fr) 255px; gap: 18px; align-items: start; }
+		.study-main { min-width: 0; }
+		.study-progress { display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--muted); font-size: 11px; }
+		.progress-track { height: 5px; margin-bottom: 19px; overflow: hidden; border-radius: 5px; background: #e3e8e1; }
+		.progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--green); transition: width .25s ease; }
+		.flashcard { display: flex; flex-direction: column; justify-content: space-between; min-height: 365px; padding: 26px 30px; border: 1px solid #e5e9e2; border-radius: 10px; background: white; box-shadow: var(--shadow); animation: cardIn .25s ease both; }
+		@keyframes cardIn { from { opacity: .65; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+		.card-top { display: flex; justify-content: space-between; align-items: center; }
+		.card-index { color: #939d95; font-size: 10px; }
+		.card-word { margin: 35px 0 13px; font-family: 'Newsreader', Georgia, serif; font-size: clamp(34px, 5vw, 49px); font-weight: 500; line-height: 1.05; overflow-wrap: anywhere; }
+		.card-examples { display: grid; gap: 10px; padding-left: 13px; border-left: 2px solid var(--lime); }
+		.card-example { margin: 0; color: #515f55; font-size: 13px; line-height: 1.55; }
+		.flip-hint { margin: 22px 0 0; color: #9aa29c; font-size: 10px; }
+		.card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 28px; }
+		.card-bottom .button { min-width: 120px; }
+		.study-aside { padding: 19px; }
+		.study-aside h3 { margin-bottom: 14px; font-size: 12px; }
+		.schedule-list { display: grid; gap: 12px; }
+		.schedule-item { display: flex; justify-content: space-between; gap: 9px; color: #66736a; font-size: 10px; }
+		.schedule-item strong { color: var(--ink); font-size: 10px; }
+		.schedule-note { margin: 16px 0 0; padding-top: 13px; border-top: 1px solid var(--line); color: #8a938c; font-size: 10px; line-height: 1.6; }
+		.study-empty { display: grid; place-items: center; min-height: 335px; padding: 36px; border: 1px solid var(--line); border-radius: 10px; background: #fff; text-align: center; }
+		.study-empty h2 { margin-bottom: 8px; font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 500; }
+		.study-empty p { max-width: 350px; margin: 0 auto 17px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+		.modal-backdrop { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(22, 34, 27, .48); animation: fadeIn .18s ease both; }
+		@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+		.modal { width: min(570px, 100%); max-height: min(88vh, 800px); overflow: auto; padding: 25px; border-radius: 11px; background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.18); }
+		.modal-header { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 22px; }
+		.modal-header h2 { margin: 0 0 5px; font-family: 'Newsreader', Georgia, serif; font-size: 27px; font-weight: 500; }
+		.modal-header p { margin: 0; color: var(--muted); font-size: 11px; }
+		.close-button { width: 31px; height: 31px; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: #66736a; font-size: 17px; line-height: 1; }
+		.field { display: grid; gap: 7px; margin-bottom: 16px; }
+		.field label { color: #4c5a50; font-size: 11px; font-weight: 700; }
+		.field input, .field select, .example-input { width: 100%; min-height: 41px; padding: 10px 11px; border: 1px solid #dfe5dc; border-radius: 6px; background: #fff; color: var(--ink); font-size: 12px; }
+		.example-section { margin-top: 21px; }
+		.example-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 9px; }
+		.example-heading label { font-size: 11px; font-weight: 700; }
+		.example-stack { display: grid; gap: 8px; }
+		.example-row { display: flex; align-items: center; gap: 8px; }
+		.example-row .example-input { flex: 1; }
+		.remove-example { flex: none; width: 31px; height: 31px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: #8b746e; font-size: 14px; }
+		.modal-footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #edf0eb; }
+		.toast { position: fixed; z-index: 20; right: 24px; bottom: 24px; display: flex; align-items: center; gap: 10px; padding: 14px 18px; border: 1px solid #d6e9db; border-radius: 8px; background: #fff; box-shadow: var(--shadow); color: var(--green-dark); font-size: 12px; font-weight: 700; animation: toastIn .25s ease both; }
+		.toast-mark { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--lime); font-size: 12px; }
+		@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+		.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+		@media (max-width: 850px) {
+			.app-shell { grid-template-columns: 1fr; padding-bottom: 66px; }
+			.sidebar { position: fixed; z-index: 5; right: 0; bottom: 0; left: 0; display: block; height: 61px; padding: 5px 10px; border-top: 1px solid var(--line); border-right: 0; }
+			.side-label, .sidebar-bottom { display: none; }
+			.nav { display: grid; grid-template-columns: repeat(3, 1fr); height: 100%; gap: 4px; }
+			.nav-button { justify-content: center; flex-direction: column; gap: 2px; padding: 4px; font-size: 9px; }
+			.nav-icon { font-size: 15px; }
+			.main { padding: 20px 22px 32px; }
+			.topbar { margin-bottom: 29px; }
+			.study-layout { grid-template-columns: minmax(0, 1fr); }
+			.study-aside { display: none; }
+		}
+		@media (max-width: 600px) {
+			.main { padding: 18px 15px 28px; }
+			.topbar { margin-bottom: 25px; }
+			.page-heading { align-items: start; }
+			.page-heading .button { flex: none; min-height: 37px; padding: 0 10px; font-size: 10px; }
+			.lower-grid { grid-template-columns: 1fr; }
+			.goal-panel { grid-template-columns: minmax(0, 1fr) 94px; gap: 10px; min-height: 140px; padding: 21px 17px; }
+			.goal-panel h2 { font-size: 25px; }
+			.goal-meter { width: 88px; height: 88px; }
+			.goal-meter::before { width: 70px; height: 70px; }
+			.goal-count strong { font-size: 20px; }
+			.section-heading { margin-top: 24px; }
+			.collection-row { grid-template-columns: minmax(95px, .7fr) minmax(0, 1fr) auto; gap: 10px; padding: 14px 12px; }
+			.collection-row .english-examples { display: none; }
+			.toolbar { align-items: stretch; flex: 1; }
+			.search-input { width: 100%; min-width: 80px; }
+			.flashcard { min-height: 370px; padding: 22px 19px; }
+			.card-word { margin-top: 43px; }
+			.card-example { font-size: 12px; }
+			.card-bottom .button { min-width: auto; flex: 1; padding: 0 9px; font-size: 10px; }
+			.row-date { display: none; }
+			.modal { padding: 21px 17px; }
+		}
+		@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+	</style>
+</head>
+<body>
+	<div class="app-shell">
+		<aside class="sidebar" aria-label="Main navigation">
+			<div class="side-label">Your workspace</div>
+			<nav class="nav">
+				<button class="nav-button active" data-view="dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Overview</button>
+				<button class="nav-button" data-view="collection"><span class="nav-icon" aria-hidden="true">▤</span>Vocabulary</button>
+				<button class="nav-button" data-view="study"><span class="nav-icon" aria-hidden="true">↗</span>Study today</button>
+			</nav>
+			<div class="sidebar-bottom"><strong>A little every day.</strong><p>Build a lasting English habit, one useful word at a time.</p></div>
+		</aside>
+		<main class="main">
+			<header class="topbar"><div><div class="eyebrow">YOUR ENGLISH, ONE WORD AT A TIME</div><div class="topbar-date" id="today-label"></div></div><span class="avatar" aria-label="Vietnamese learner">VN</span></header>
+			<div class="content" id="app-content"></div>
+		</main>
+	</div>
+	<div id="modal-root"></div>
+	<div id="toast-root" aria-live="polite" aria-atomic="true"></div>
+
+	<script>
+		const STORAGE_KEY = 'wordwell.cards.v1';
+		const GOAL = 10;
+		const REVIEW_DAYS = [1, 3, 5, 10, 20];
+		const TYPES = ['noun', 'verb', 'adj', 'adv', 'idiom'];
+		let cards = loadCards();
+		let currentView = 'dashboard';
+		let studyQueue = [];
+		let studyIndex = 0;
+		let isFlipped = false;
+		let toastTimer;
+
+		function loadCards() {
+			try {
+				const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+				return Array.isArray(saved) ? saved.filter(card => card && card.id && card.word) : [];
+			} catch { return []; }
+		}
+
+		function saveCards() {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+		}
+
+		function dateKey(date = new Date()) {
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const day = String(date.getDate()).padStart(2, '0');
+			return `${year}-${month}-${day}`;
+		}
+
+		function dayAge(createdDate) {
+			const [year, month, day] = createdDate.split('-').map(Number);
+			const created = Date.UTC(year, month - 1, day);
+			const [nowYear, nowMonth, nowDay] = dateKey().split('-').map(Number);
+			return Math.floor((Date.UTC(nowYear, nowMonth - 1, nowDay) - created) / 86400000);
+		}
+
+		function esc(value) {
+			return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+		}
+
+		function getCreatedToday() {
+			return cards.filter(card => card.createdDate === dateKey()).length;
+		}
+
+		function wasStudiedToday(card) {
+			return Array.isArray(card.studiedDates) && card.studiedDates.includes(dateKey());
+		}
+
+		function isDue(card) {
+			const age = dayAge(card.createdDate);
+			const reviewCount = card.reviewCount || 0;
+			return !wasStudiedToday(card) && (age === 0 || (age > 0 && age >= REVIEW_DAYS[reviewCount]));
+		}
+
+		function getDueCards() {
+			return cards.filter(isDue).sort((a, b) => dayAge(a.createdDate) - dayAge(b.createdDate) || a.word.localeCompare(b.word));
+		}
+
+		function greeting() {
+			const hour = new Date().getHours();
+			return hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+		}
+
+		function formatToday() {
+			return new Intl.DateTimeFormat('en', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date());
+		}
+
+		function shortDate(key) {
+			const [year, month, day] = key.split('-').map(Number);
+			return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(new Date(year, month - 1, day));
+		}
+
+		function setView(view) {
+			currentView = view;
+			document.querySelectorAll('.nav-button').forEach(button => button.classList.toggle('active', button.dataset.view === view));
+			render();
+		}
+
+		function render() {
+			document.getElementById('today-label').textContent = formatToday();
+			const content = document.getElementById('app-content');
+			content.innerHTML = currentView === 'dashboard' ? dashboardTemplate() : currentView === 'collection' ? collectionTemplate() : studyTemplate();
+			if (currentView === 'study') renderStudyCard();
+		}
+
+		function dashboardTemplate() {
+			const createdToday = getCreatedToday();
+			const due = getDueCards();
+			const latest = [...cards].sort((a, b) => b.createdDate.localeCompare(a.createdDate) || b.createdAt.localeCompare(a.createdAt)).slice(0, 4);
+			const complete = createdToday >= GOAL;
+			return `<section>
+				<div class="page-heading"><div><h1>Good ${greeting()}, learner.</h1><p>Small steps add up. Here's your English practice today.</p></div><button class="button" data-action="new-card"><span aria-hidden="true">+</span> Add vocabulary</button></div>
+				<article class="goal-panel ${complete ? 'goal-complete' : ''}"><div><div class="eyebrow">DAILY CREATION GOAL</div>${complete ? '<h2>Goal complete.</h2>' : ''}<p>${complete ? 'You reached your goal today. Come back tomorrow to keep your rhythm.' : `${GOAL - createdToday} more ${GOAL - createdToday === 1 ? 'word' : 'words'} to reach today's goal.`}</p></div><div class="goal-meter" role="img" aria-label="${createdToday} of ${GOAL} vocabulary words added today" style="--progress:${Math.min(createdToday / GOAL * 100, 100)}%"><div class="goal-count"><strong>${createdToday}<span class="sr-only"> of ${GOAL}</span></strong><span>of ${GOAL} words</span></div></div></article>
+				<div class="section-heading"><h2>Your learning today</h2><span>${cards.length} ${cards.length === 1 ? 'word' : 'words'} saved</span></div>
+				<div class="lower-grid"><article class="panel list-panel">${latest.length ? latest.map(card => `<div class="list-row"><div><div class="word-line"><strong>${esc(card.word)}</strong><span class="part-tag">${esc(card.type)}</span></div><p class="row-subtitle">${esc((card.viExamples || [])[0] || 'No Vietnamese example')}</p></div><span class="row-date">${shortDate(card.createdDate)}</span></div>`).join('') : '<div class="empty-inline">Your vocabulary will appear here.</div>'}</article><article class="panel review-panel"><div><div class="eyebrow">SPACED REVIEW</div><div class="review-number">${due.length}</div><p>${due.length ? 'cards are ready for a quick review' : 'No reviews due right now'}</p></div><button class="button text-button" data-action="start-study" ${due.length ? '' : 'disabled'}>Open study session <span aria-hidden="true">→</span></button></article></div>
+			</section>`;
+		}
+
+		function collectionTemplate() {
+			const rows = cards.length ? [...cards].sort((a, b) => b.createdDate.localeCompare(a.createdDate) || b.createdAt.localeCompare(a.createdAt)).map(card => `<article class="collection-row" data-word="${esc(card.word.toLowerCase())}"><div><div class="word-line"><strong>${esc(card.word)}</strong><span class="part-tag">${esc(card.type)}</span></div></div><div class="collection-examples"><small>Vietnamese</small>${esc((card.viExamples || []).join(' · ') || '—')}</div><div class="collection-examples english-examples"><small>English</small>${esc((card.enExamples || []).join(' · ') || '—')}</div><button class="delete-button" data-action="delete-card" data-id="${esc(card.id)}" aria-label="Delete ${esc(card.word)}">Delete</button></article>`).join('') : `<div class="empty-state"><h3>Your word list starts here.</h3><p>Add vocabulary with Vietnamese prompts and English examples. Your cards are saved on this device.</p><button class="button" data-action="new-card">Add your first word</button></div>`;
+			return `<section><div class="page-heading"><div><h1>My vocabulary</h1><p>${cards.length} ${cards.length === 1 ? 'word' : 'words'} in your collection</p></div><div class="toolbar">${cards.length ? '<label class="sr-only" for="search-words">Search vocabulary</label><input id="search-words" class="search-input" type="search" placeholder="Search words..." autocomplete="off">' : ''}<button class="button" data-action="new-card"><span aria-hidden="true">+</span> Add word</button></div></div><div class="panel collection-list">${rows}</div></section>`;
+		}
+
+		function scheduleTemplate() {
+			return '<div class="schedule-list"><div class="schedule-item"><span>First review</span><strong>Day 2</strong></div><div class="schedule-item"><span>Second review</span><strong>Day 4</strong></div><div class="schedule-item"><span>Third review</span><strong>Day 6</strong></div><div class="schedule-item"><span>Fourth review</span><strong>Day 11</strong></div><div class="schedule-item"><span>Final review</span><strong>Day 21</strong></div></div>';
+		}
+
+		function studyTemplate() {
+			const due = getDueCards();
+			if (!due.length) return `<section><div class="page-heading"><div><h1>Study today</h1><p>Your daily vocabulary and spaced reviews.</p></div></div><div class="study-empty"><div><h2>You're all caught up.</h2><p>${cards.length ? 'No cards are due today. Your next review will appear here on its scheduled day.' : 'Add vocabulary words, then come back here for a study session.'}</p><button class="button" data-action="new-card">Create a flashcard</button></div></div><div class="section-heading"><h2>Your review rhythm</h2><span>After each set is created</span></div><article class="panel study-aside" style="display:block">${scheduleTemplate()}</article></section>`;
+			return `<section><div class="page-heading"><div><h1>Study today</h1><p>Your daily vocabulary and spaced reviews.</p></div><span class="eyebrow">${due.length} ${due.length === 1 ? 'CARD' : 'CARDS'} IN THIS SESSION</span></div><div class="study-layout"><div class="study-main"><div class="study-progress"><span id="study-count"></span><span id="study-percent"></span></div><div class="progress-track"><div class="progress-fill" id="study-progress-fill"></div></div><div id="flashcard-slot"></div></div><aside class="panel study-aside"><h3>Your review rhythm</h3>${scheduleTemplate()}<p class="schedule-note">Cards return 1, 3, 5, 10, and 20 days after you add them. Missed reviews stay due. Today's new cards are included too.</p></aside></div></section>`;
+		}
+
+		function flashcardTemplate(card, flipped) {
+			const examples = flipped ? card.enExamples : card.viExamples;
+			const label = flipped ? 'ENGLISH EXAMPLES' : 'VIETNAMESE EXAMPLES';
+			return `<article class="flashcard" aria-label="Flashcard for ${esc(card.word)}"><div><div class="card-top"><span class="part-tag">${esc(card.type)}</span><span class="card-index">${flipped ? 'BACK OF CARD' : 'FRONT OF CARD'}</span></div><h2 class="card-word">${esc(card.word)}</h2><div class="eyebrow">${label}</div><div class="card-examples">${(examples || []).map(example => `<p class="card-example">${esc(example)}</p>`).join('') || '<p class="card-example">No examples added yet.</p>'}</div>${flipped ? '' : '<p class="flip-hint">Think of the English examples, then reveal the answer.</p>'}</div><div class="card-bottom">${flipped ? '<button class="button secondary" data-action="flip-card">Show Vietnamese</button><button class="button" data-action="complete-card">Got it, next</button>' : '<span class="card-index">Take your time</span><button class="button" data-action="flip-card">Reveal answer</button>'}</div></article>`;
+		}
+
+		function renderStudyCard() {
+			const slot = document.getElementById('flashcard-slot');
+			if (!slot) return;
+			if (!studyQueue.length) studyQueue = getDueCards();
+			if (studyIndex >= studyQueue.length) {
+				slot.innerHTML = `<div class="study-empty"><div><h2>Session complete.</h2><p>That's today's set taken care of.</p><button class="button" data-action="go-dashboard">Back to overview</button></div></div>`;
+				document.getElementById('study-count').textContent = `${studyQueue.length} of ${studyQueue.length} complete`;
+				document.getElementById('study-percent').textContent = '100%';
+				document.getElementById('study-progress-fill').style.width = '100%';
+				return;
+			}
+			document.getElementById('study-count').textContent = `Card ${studyIndex + 1} of ${studyQueue.length}`;
+			document.getElementById('study-percent').textContent = `${Math.round(studyIndex / studyQueue.length * 100)}%`;
+			document.getElementById('study-progress-fill').style.width = `${studyIndex / studyQueue.length * 100}%`;
+			slot.innerHTML = flashcardTemplate(studyQueue[studyIndex], false);
+		}
+
+		function exampleInput(kind) {
+			const vietnamese = kind === 'viExamples';
+			return `<div class="example-row"><input class="example-input" name="${kind}" maxlength="240" placeholder="${vietnamese ? 'e.g. Cô ấy đi đến trường mỗi ngày.' : 'e.g. She walks to school every day.'}" required><button class="remove-example" type="button" data-action="remove-example" aria-label="Remove example" hidden>×</button></div>`;
+		}
+
+		function openCardModal() {
+			document.getElementById('modal-root').innerHTML = `<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><h2 id="modal-title">Add vocabulary</h2><p>Build a useful card with examples you will remember.</p></div><button class="close-button" type="button" data-action="close-modal" aria-label="Close dialog">×</button></div><form id="card-form"><div class="field"><label for="word-input">Vocabulary</label><input id="word-input" name="word" maxlength="80" placeholder="e.g. school" required autocomplete="off"></div><div class="field"><label for="type-input">Type of vocabulary</label><select id="type-input" name="type" required>${TYPES.map(type => `<option value="${type}">${type === 'adj' ? 'adjective' : type === 'adv' ? 'adverb' : type}</option>`).join('')}</select></div><div class="example-section"><div class="example-heading"><label>Vietnamese example</label><button class="button text-button" type="button" data-action="add-example" data-kind="viExamples">+ Add another</button></div><div class="example-stack" data-examples="viExamples">${exampleInput('viExamples')}</div></div><div class="example-section"><div class="example-heading"><label>English example</label><button class="button text-button" type="button" data-action="add-example" data-kind="enExamples">+ Add another</button></div><div class="example-stack" data-examples="enExamples">${exampleInput('enExamples')}</div></div><div class="modal-footer"><button class="button secondary" type="button" data-action="close-modal">Cancel</button><button class="button" type="submit">Save flashcard</button></div></form></section></div>`;
+			document.getElementById('word-input').focus();
+		}
+
+		function closeModal() {
+			document.getElementById('modal-root').innerHTML = '';
+		}
+
+		function showToast(message) {
+			const root = document.getElementById('toast-root');
+			root.innerHTML = `<div class="toast"><span class="toast-mark" aria-hidden="true">✓</span>${esc(message)}</div>`;
+			clearTimeout(toastTimer);
+			toastTimer = setTimeout(() => { root.innerHTML = ''; }, 3600);
+		}
+
+		function startStudy() {
+			studyQueue = getDueCards();
+			studyIndex = 0;
+			isFlipped = false;
+			setView('study');
+		}
+
+		document.addEventListener('click', event => {
+			const button = event.target.closest('[data-action]');
+			if (!button) return;
+			const action = button.dataset.action;
+			if (action === 'new-card') openCardModal();
+			if (action === 'close-modal') closeModal();
+			if (action === 'backdrop-close' && event.target === button) closeModal();
+			if (action === 'start-study') startStudy();
+			if (action === 'go-dashboard') setView('dashboard');
+			if (action === 'add-example') {
+				const stack = document.querySelector(`[data-examples="${button.dataset.kind}"]`);
+				const wrapper = document.createElement('div');
+				wrapper.innerHTML = exampleInput(button.dataset.kind);
+				const row = wrapper.firstElementChild;
+				row.querySelector('button').hidden = false;
+				stack.append(row);
+				row.querySelector('input').focus();
+			}
+			if (action === 'remove-example') {
+				const row = button.closest('.example-row');
+				const stack = row.parentElement;
+				row.remove();
+				if (stack.querySelectorAll('.example-row').length === 1) stack.querySelector('.remove-example').hidden = true;
+			}
+			if (action === 'flip-card') {
+				isFlipped = !isFlipped;
+				document.getElementById('flashcard-slot').innerHTML = flashcardTemplate(studyQueue[studyIndex], isFlipped);
+			}
+			if (action === 'complete-card') {
+				const card = studyQueue[studyIndex];
+				card.studiedDates = Array.isArray(card.studiedDates) ? card.studiedDates : [];
+				if (!card.studiedDates.includes(dateKey())) {
+					card.studiedDates.push(dateKey());
+					if (dayAge(card.createdDate) > 0) card.reviewCount = Math.min((card.reviewCount || 0) + 1, REVIEW_DAYS.length);
+				}
+				saveCards();
+				studyIndex += 1;
+				renderStudyCard();
+			}
+			if (action === 'delete-card') {
+				const card = cards.find(item => item.id === button.dataset.id);
+				if (card && confirm(`Delete “${card.word}” and its examples?`)) {
+					cards = cards.filter(item => item.id !== card.id);
+					saveCards();
+					render();
+				}
+			}
+		});
+
+		document.addEventListener('submit', event => {
+			if (event.target.id !== 'card-form') return;
+			event.preventDefault();
+			const form = event.target;
+			if (!form.reportValidity()) return;
+			const formData = new FormData(form);
+			const before = getCreatedToday();
+			const card = {
+				id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+				word: String(formData.get('word')).trim(),
+				type: String(formData.get('type')),
+				viExamples: formData.getAll('viExamples').map(value => String(value).trim()).filter(Boolean),
+				enExamples: formData.getAll('enExamples').map(value => String(value).trim()).filter(Boolean),
+				createdDate: dateKey(),
+				createdAt: new Date().toISOString(),
+				reviewCount: 0,
+				studiedDates: []
+			};
+			if (!card.word || !card.viExamples.length || !card.enExamples.length) return;
+			cards.push(card);
+			saveCards();
+			closeModal();
+			render();
+			if (before < GOAL && getCreatedToday() >= GOAL) showToast('Goal complete');
+			else showToast('Flashcard saved');
+		});
+
+		document.addEventListener('input', event => {
+			if (event.target.id !== 'search-words') return;
+			const query = event.target.value.trim().toLocaleLowerCase();
+			document.querySelectorAll('.collection-row').forEach(row => { row.hidden = !row.dataset.word.includes(query); });
+		});
+
+		document.addEventListener('keydown', event => {
+			if (event.key === 'Escape') closeModal();
+			if (currentView === 'study' && event.code === 'Space' && !document.querySelector('.modal')) {
+				const flipButton = document.querySelector('[data-action="flip-card"]');
+				if (flipButton) { event.preventDefault(); flipButton.click(); }
+			}
+		});
+
+		document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
+		render();
+	</script>
+</body>
+</html>
