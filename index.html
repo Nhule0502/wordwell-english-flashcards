@@ -110,6 +110,40 @@
 		.empty-state p { max-width: 390px; margin: 0 auto 18px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 		.study-layout { display: grid; grid-template-columns: minmax(0, 1fr) 255px; gap: 18px; align-items: start; }
 		.study-main { min-width: 0; }
+		.study-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+		.study-stat { min-width: 0; padding: 16px 18px; }
+		.study-stat .eyebrow { color: #82715e; font-size: 9px; }
+		.study-stat strong { display: block; margin: 9px 0 4px; color: var(--green-dark); font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 500; line-height: 1; }
+		.study-stat p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.4; }
+		.study-dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .85fr); gap: 16px; align-items: stretch; }
+		.activity-panel, .repetition-panel { min-width: 0; padding: 20px; }
+		.activity-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+		.activity-header h2, .repetition-panel h2 { margin: 0; font-size: 14px; font-weight: 700; }
+		.activity-header span { color: var(--muted); font-size: 10px; }
+		.activity-weekdays, .activity-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+		.activity-weekdays { margin-top: 18px; }
+		.activity-weekday { color: #8b7a66; font-size: 9px; text-align: center; }
+		.activity-calendar { margin-top: 7px; }
+		.activity-day { display: grid; place-items: center; min-width: 0; aspect-ratio: 1; border: 1px solid transparent; border-radius: 5px; color: #5f4936; font-size: 10px; }
+		.activity-day.empty { visibility: hidden; }
+		.activity-day.level-0 { border-color: #e9dfd0; background: #f8f3eb; color: #8a7b69; }
+		.activity-day.level-1 { background: #f1dfbc; }
+		.activity-day.level-2 { background: #e6c982; }
+		.activity-day.level-3 { background: #c9784d; color: #fffaf2; }
+		.activity-day.level-4 { background: #855034; color: #fffaf2; }
+		.activity-legend { display: flex; justify-content: flex-end; align-items: center; gap: 5px; margin-top: 14px; color: #857767; font-size: 9px; }
+		.activity-swatch { width: 12px; height: 12px; border-radius: 3px; }
+		.activity-note { margin: 12px 0 0; color: #857767; font-size: 10px; line-height: 1.5; }
+		.repetition-panel { display: flex; flex-direction: column; }
+		.repetition-due { margin: 13px 0 4px; color: var(--green); font-family: 'Newsreader', Georgia, serif; font-size: 35px; line-height: 1; }
+		.repetition-panel p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+		.repetition-panel .button { align-self: flex-start; margin-top: 15px; }
+		.repetition-heading { margin-top: 24px !important; padding-top: 17px; border-top: 1px solid var(--line); }
+		.repetition-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; margin-top: 18px; }
+		.repetition-step { position: relative; min-width: 0; padding-top: 11px; border-top: 2px solid #d7c5ac; }
+		.repetition-step::before { position: absolute; top: -5px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--coral); content: ''; }
+		.repetition-step strong { display: block; color: var(--ink); font-size: 9px; }
+		.repetition-step span { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; }
 		.study-progress { display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--muted); font-size: 11px; }
 		.progress-track { height: 5px; margin-bottom: 19px; overflow: hidden; border-radius: 5px; background: #e3e8e1; }
 		.progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--green); transition: width .25s ease; }
@@ -166,6 +200,7 @@
 			.main { padding: 20px 22px 32px; }
 			.topbar { margin-bottom: 29px; }
 			.study-layout { grid-template-columns: minmax(0, 1fr); }
+			.study-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
 			.study-aside { display: none; }
 		}
 		@media (max-width: 600px) {
@@ -176,6 +211,14 @@
 			.page-heading { align-items: start; }
 			.page-heading .button { flex: none; min-height: 37px; padding: 0 10px; font-size: 10px; }
 			.lower-grid { grid-template-columns: 1fr; }
+						.study-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+						.study-stat { padding: 14px; }
+						.study-stat strong { font-size: 26px; }
+						.activity-panel, .repetition-panel { padding: 16px; }
+						.activity-weekdays, .activity-calendar { gap: 4px; }
+						.activity-day { font-size: 9px; }
+						.repetition-steps { gap: 3px; }
+						.repetition-step span { font-size: 7px; }
 			.goal-panel { grid-template-columns: minmax(0, 1fr) 94px; gap: 10px; min-height: 140px; padding: 21px 17px; }
 			.goal-panel h2 { font-size: 25px; }
 			.goal-meter { width: 88px; height: 88px; }
@@ -203,7 +246,7 @@
 			<nav class="nav">
 				<button class="nav-button active" data-view="dashboard"><span class="nav-icon" aria-hidden="true">⌂</span>Overview</button>
 				<button class="nav-button" data-view="collection"><span class="nav-icon" aria-hidden="true">▤</span>Vocabulary</button>
-				<button class="nav-button" data-view="study"><span class="nav-icon" aria-hidden="true">↗</span>Study today</button>
+				<button class="nav-button" data-view="study"><span class="nav-icon" aria-hidden="true">↗</span>Study dashboard</button>
 			</nav>
 			<div class="sidebar-bottom"><strong>A little every day.</strong><p>Build a lasting English habit, one useful word at a time.</p></div>
 		</aside>
@@ -230,6 +273,7 @@
 		const TYPES = ['noun', 'verb', 'adj', 'adv', 'idiom'];
 		let cards = loadCards();
 		let currentView = 'dashboard';
+				let studySessionActive = false;
 		let studyQueue = [];
 		let studyIndex = 0;
 		let isFlipped = false;
@@ -432,6 +476,35 @@
 			return cards.filter(isDue).sort((a, b) => dayAge(a.createdDate) - dayAge(b.createdDate) || a.word.localeCompare(b.word));
 		}
 
+		function getMonthlyActivity(date = new Date()) {
+			const year = date.getFullYear();
+			const monthIndex = date.getMonth();
+			const monthKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+			const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+			const days = Array.from({ length: daysInMonth }, (_, index) => ({ day: index + 1, reviewed: 0, added: 0 }));
+			for (const card of cards) {
+				if (card.createdDate?.slice(0, 7) === monthKey) {
+					const day = Number(card.createdDate.slice(8, 10));
+					if (day >= 1 && day <= daysInMonth) days[day - 1].added += 1;
+				}
+				for (const studiedDate of new Set(card.studiedDates || [])) {
+					if (studiedDate?.slice(0, 7) !== monthKey) continue;
+					const day = Number(studiedDate.slice(8, 10));
+					if (day >= 1 && day <= daysInMonth) days[day - 1].reviewed += 1;
+				}
+			}
+			return {
+				monthLabel: new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(date),
+				firstWeekday: new Date(year, monthIndex, 1).getDay(),
+				daysInMonth,
+				activeDays: days.filter(day => day.reviewed + day.added > 0).length,
+				studyDays: days.filter(day => day.reviewed > 0).length,
+				reviewCount: days.reduce((total, day) => total + day.reviewed, 0),
+				createdCount: days.reduce((total, day) => total + day.added, 0),
+				days
+			};
+		}
+
 		function greeting() {
 			const hour = new Date().getHours();
 			return hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
@@ -455,8 +528,8 @@
 		function render() {
 			document.getElementById('today-label').textContent = formatToday();
 			const content = document.getElementById('app-content');
-			content.innerHTML = currentView === 'dashboard' ? dashboardTemplate() : currentView === 'collection' ? collectionTemplate() : studyTemplate();
-			if (currentView === 'study') renderStudyCard();
+			content.innerHTML = currentView === 'dashboard' ? dashboardTemplate() : currentView === 'collection' ? collectionTemplate() : studySessionActive ? studySessionTemplate() : studyTemplate();
+			if (currentView === 'study' && studySessionActive) renderStudyCard();
 		}
 
 		function dashboardTemplate() {
@@ -482,6 +555,20 @@
 		}
 
 		function studyTemplate() {
+			const activity = getMonthlyActivity();
+			const due = getDueCards();
+			const blanks = Array.from({ length: activity.firstWeekday }, () => '<span class="activity-day empty" aria-hidden="true"></span>').join('');
+			const calendar = activity.days.map(day => {
+				const total = day.reviewed + day.added;
+				const level = Math.min(total, 4);
+				const label = `${activity.monthLabel} ${day.day}: ${day.reviewed} cards reviewed, ${day.added} words added`;
+				return `<div class="activity-day level-${level}" title="${esc(label)}" aria-label="${esc(label)}">${day.day}</div>`;
+			}).join('');
+			const rhythm = [[2, 'Review 1'], [4, 'Review 2'], [6, 'Review 3'], [11, 'Review 4'], [21, 'Final']].map(([day, label]) => `<div class="repetition-step"><strong>Day ${day}</strong><span>${label}</span></div>`).join('');
+			return `<section><div class="page-heading"><div><h1>Study dashboard</h1><p>Your repetition schedule and app activity this month.</p></div><span class="eyebrow">${activity.monthLabel.toUpperCase()}</span></div><div class="study-stats"><article class="panel study-stat"><div class="eyebrow">ACTIVE DAYS</div><strong>${activity.activeDays}</strong><p>days with study or new cards</p></article><article class="panel study-stat"><div class="eyebrow">STUDY DAYS</div><strong>${activity.studyDays}</strong><p>days with card reviews</p></article><article class="panel study-stat"><div class="eyebrow">CARDS REVIEWED</div><strong>${activity.reviewCount}</strong><p>reviews completed this month</p></article><article class="panel study-stat"><div class="eyebrow">WORDS ADDED</div><strong>${activity.createdCount}</strong><p>new vocabulary this month</p></article></div><div class="study-dashboard-grid"><article class="panel activity-panel"><div class="activity-header"><h2>Monthly activity</h2><span>${activity.activeDays} active ${activity.activeDays === 1 ? 'day' : 'days'}</span></div><div class="activity-weekdays" aria-hidden="true">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => `<span class="activity-weekday">${day}</span>`).join('')}</div><div class="activity-calendar" role="group" aria-label="${activity.monthLabel} activity calendar">${blanks}${calendar}</div><div class="activity-legend"><span>Less</span><span class="activity-swatch activity-day level-0"></span><span class="activity-swatch activity-day level-1"></span><span class="activity-swatch activity-day level-2"></span><span class="activity-swatch activity-day level-3"></span><span class="activity-swatch activity-day level-4"></span><span>More</span></div><p class="activity-note">Daily activity combines cards reviewed and words added.</p></article><aside class="panel repetition-panel"><div class="eyebrow">TODAY'S REPETITION</div><div class="repetition-due">${due.length}</div><p>${due.length ? `${due.length} ${due.length === 1 ? 'card is' : 'cards are'} ready for review.` : 'No reviews due today.'}</p><button class="button" data-action="${due.length ? 'start-study' : 'new-card'}">${due.length ? 'Start today\'s reviews' : 'Add vocabulary'}</button><h2 class="repetition-heading">Your repetition rhythm</h2><p>Each set returns on its scheduled day after creation.</p><div class="repetition-steps">${rhythm}</div></aside></div></section>`;
+		}
+
+		function studySessionTemplate() {
 			const due = getDueCards();
 			if (!due.length) return `<section><div class="page-heading"><div><h1>Study today</h1><p>Your daily vocabulary and spaced reviews.</p></div></div><div class="study-empty"><div><h2>You're all caught up.</h2><p>${cards.length ? 'No cards are due today. Your next review will appear here on its scheduled day.' : 'Add vocabulary words, then come back here for a study session.'}</p><button class="button" data-action="new-card">Create a flashcard</button></div></div><div class="section-heading"><h2>Your review rhythm</h2><span>After each set is created</span></div><article class="panel study-aside" style="display:block">${scheduleTemplate()}</article></section>`;
 			return `<section><div class="page-heading"><div><h1>Study today</h1><p>Your daily vocabulary and spaced reviews.</p></div><span class="eyebrow">${due.length} ${due.length === 1 ? 'CARD' : 'CARDS'} IN THIS SESSION</span></div><div class="study-layout"><div class="study-main"><div class="study-progress"><span id="study-count"></span><span id="study-percent"></span></div><div class="progress-track"><div class="progress-fill" id="study-progress-fill"></div></div><div id="flashcard-slot"></div></div><aside class="panel study-aside"><h3>Your review rhythm</h3>${scheduleTemplate()}<p class="schedule-note">Cards return 1, 3, 5, 10, and 20 days after you add them. Missed reviews stay due. Today's new cards are included too.</p></aside></div></section>`;
@@ -560,6 +647,7 @@
 			studyQueue = getDueCards();
 			studyIndex = 0;
 			isFlipped = false;
+			studySessionActive = true;
 			setView('study');
 		}
 
@@ -699,7 +787,10 @@
 			}
 		});
 
-		document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
+		document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => {
+			if (button.dataset.view === 'study') studySessionActive = false;
+			setView(button.dataset.view);
+		}));
 		render();
 		initializeCloudSync();
 		window.addEventListener('focus', () => {
