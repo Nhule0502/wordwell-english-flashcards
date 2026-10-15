@@ -79,6 +79,13 @@
 		.section-heading h2 { margin: 0; font-size: 14px; font-weight: 700; }
 		.section-heading span { color: var(--muted); font-size: 11px; }
 		.lower-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(245px, .8fr); gap: 16px; }
+				.study-sets { margin-top: 28px; }
+				.study-set-list { border-top: 1px solid var(--line); }
+				.study-set-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 14px 2px; border-bottom: 1px solid var(--line); }
+				.study-set-info { min-width: 0; }
+				.study-set-info .word-line { flex-wrap: wrap; }
+				.study-set-row .button { flex: none; }
+				.study-set-empty { padding: 16px 0; color: var(--muted); font-size: 12px; }
 		.list-panel { padding: 4px 20px; }
 		.list-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 15px 0; border-bottom: 1px solid #eee4d8; }
 		.list-row:last-child { border-bottom: 0; }
@@ -211,6 +218,9 @@
 			.page-heading { align-items: start; }
 			.page-heading .button { flex: none; min-height: 37px; padding: 0 10px; font-size: 10px; }
 			.lower-grid { grid-template-columns: 1fr; }
+									.study-sets .section-heading { align-items: flex-start; }
+									.study-set-row { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+									.study-set-row .button { justify-self: start; }
 						.study-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 						.study-stat { padding: 14px; }
 						.study-stat strong { font-size: 26px; }
@@ -274,6 +284,7 @@
 		let cards = loadCards();
 		let currentView = 'dashboard';
 				let studySessionActive = false;
+				let studySessionLabel = "Today's reviews";
 		let studyQueue = [];
 		let studyIndex = 0;
 		let isFlipped = false;
@@ -476,6 +487,21 @@
 			return cards.filter(isDue).sort((a, b) => dayAge(a.createdDate) - dayAge(b.createdDate) || a.word.localeCompare(b.word));
 		}
 
+		function getVocabularySets() {
+			const setsByDate = new Map();
+			for (const card of cards) {
+				if (!setsByDate.has(card.createdDate)) setsByDate.set(card.createdDate, []);
+				setsByDate.get(card.createdDate).push(card);
+			}
+			return [...setsByDate.entries()]
+				.sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
+				.map(([createdDate, setCards]) => ({
+					createdDate,
+					cards: setCards.sort((a, b) => a.word.localeCompare(b.word)),
+					dueCount: setCards.filter(isDue).length
+				}));
+		}
+
 		function getMonthlyActivity(date = new Date()) {
 			const year = date.getFullYear();
 			const monthIndex = date.getMonth();
@@ -529,6 +555,7 @@
 			document.getElementById('today-label').textContent = formatToday();
 			const content = document.getElementById('app-content');
 			content.innerHTML = currentView === 'dashboard' ? dashboardTemplate() : currentView === 'collection' ? collectionTemplate() : studySessionActive ? studySessionTemplate() : studyTemplate();
+			if (currentView === 'dashboard') content.insertAdjacentHTML('beforeend', vocabularySetsTemplate());
 			if (currentView === 'study' && studySessionActive) renderStudyCard();
 		}
 
@@ -543,6 +570,12 @@
 				<div class="section-heading"><h2>Your learning today</h2><span>${cards.length} ${cards.length === 1 ? 'word' : 'words'} saved</span></div>
 				<div class="lower-grid"><article class="panel list-panel">${latest.length ? latest.map(card => `<div class="list-row"><div><div class="word-line"><strong>${esc(card.word)}</strong><span class="part-tag">${esc(card.type)}</span></div><p class="row-subtitle">${esc((card.viExamples || [])[0] || 'No Vietnamese example')}</p></div><span class="row-date">${shortDate(card.createdDate)}</span></div>`).join('') : '<div class="empty-inline">Your vocabulary will appear here.</div>'}</article><article class="panel review-panel"><div><div class="eyebrow">SPACED REVIEW</div><div class="review-number">${due.length}</div><p>${due.length ? 'cards are ready for a quick review' : 'No reviews due right now'}</p></div><button class="button text-button" data-action="start-study" ${due.length ? '' : 'disabled'}>Open study session <span aria-hidden="true">→</span></button></article></div>
 			</section>`;
+		}
+
+		function vocabularySetsTemplate() {
+			const sets = getVocabularySets();
+			const rows = sets.map(set => `<div class="study-set-row"><div class="study-set-info"><div class="word-line"><strong>${esc(shortDate(set.createdDate))} set</strong><span class="part-tag">${set.cards.length} ${set.cards.length === 1 ? 'word' : 'words'}</span></div><p class="row-subtitle">${set.dueCount ? `${set.dueCount} due for scheduled review` : 'Available to study anytime'}</p></div><button class="button secondary" data-action="study-set" data-set-date="${esc(set.createdDate)}">Study this set</button></div>`).join('');
+			return `<section class="study-sets"><div class="section-heading"><div><h2>Study any set</h2><span>Choose any creation-day set, whether or not it is due.</span></div><button class="button secondary" data-action="study-all" ${cards.length ? '' : 'disabled'}>Study all words</button></div>${rows ? `<div class="study-set-list">${rows}</div>` : '<div class="study-set-empty">Add vocabulary to create your first study set.</div>'}</section>`;
 		}
 
 		function collectionTemplate() {
@@ -569,9 +602,9 @@
 		}
 
 		function studySessionTemplate() {
-			const due = getDueCards();
-			if (!due.length) return `<section><div class="page-heading"><div><h1>Study today</h1><p>Your daily vocabulary and spaced reviews.</p></div></div><div class="study-empty"><div><h2>You're all caught up.</h2><p>${cards.length ? 'No cards are due today. Your next review will appear here on its scheduled day.' : 'Add vocabulary words, then come back here for a study session.'}</p><button class="button" data-action="new-card">Create a flashcard</button></div></div><div class="section-heading"><h2>Your review rhythm</h2><span>After each set is created</span></div><article class="panel study-aside" style="display:block">${scheduleTemplate()}</article></section>`;
-			return `<section><div class="page-heading"><div><h1>Study today</h1><p>Your daily vocabulary and spaced reviews.</p></div><span class="eyebrow">${due.length} ${due.length === 1 ? 'CARD' : 'CARDS'} IN THIS SESSION</span></div><div class="study-layout"><div class="study-main"><div class="study-progress"><span id="study-count"></span><span id="study-percent"></span></div><div class="progress-track"><div class="progress-fill" id="study-progress-fill"></div></div><div id="flashcard-slot"></div></div><aside class="panel study-aside"><h3>Your review rhythm</h3>${scheduleTemplate()}<p class="schedule-note">Cards return 1, 3, 5, 10, and 20 days after you add them. Missed reviews stay due. Today's new cards are included too.</p></aside></div></section>`;
+			const sessionCards = studyQueue;
+			if (!sessionCards.length) return `<section><div class="page-heading"><div><h1>${esc(studySessionLabel)}</h1><p>No vocabulary in this selection.</p></div></div><div class="study-empty"><div><h2>No cards to study.</h2><button class="button" data-action="go-dashboard">Back to overview</button></div></div></section>`;
+			return `<section><div class="page-heading"><div><h1>${esc(studySessionLabel)}</h1><p>Study at your own pace. Any set can be practiced anytime.</p></div><span class="eyebrow">${sessionCards.length} ${sessionCards.length === 1 ? 'CARD' : 'CARDS'} IN THIS SESSION</span></div><div class="study-layout"><div class="study-main"><div class="study-progress"><span id="study-count"></span><span id="study-percent"></span></div><div class="progress-track"><div class="progress-fill" id="study-progress-fill"></div></div><div id="flashcard-slot"></div></div><aside class="panel study-aside"><h3>Your review rhythm</h3>${scheduleTemplate()}<p class="schedule-note">Optional study sessions can be started for any set. Review counts advance only on scheduled review days.</p></aside></div></section>`;
 		}
 
 		function flashcardTemplate(card, flipped) {
@@ -643,10 +676,11 @@
 			toastTimer = setTimeout(() => { root.innerHTML = ''; }, 3600);
 		}
 
-		function startStudy() {
-			studyQueue = getDueCards();
+		function startStudy(selectedCards = getDueCards(), label = "Today's reviews") {
+			studyQueue = [...selectedCards];
 			studyIndex = 0;
 			isFlipped = false;
+			studySessionLabel = label;
 			studySessionActive = true;
 			setView('study');
 		}
@@ -667,6 +701,12 @@
 			if (action === 'close-modal') closeModal();
 			if (action === 'backdrop-close' && event.target === button) closeModal();
 			if (action === 'start-study') startStudy();
+						if (action === 'study-all') startStudy([...cards].sort((a, b) => a.createdDate.localeCompare(b.createdDate) || a.word.localeCompare(b.word)), 'All vocabulary');
+						if (action === 'study-set') {
+							const createdDate = button.dataset.setDate;
+							const setCards = cards.filter(card => card.createdDate === createdDate).sort((a, b) => a.word.localeCompare(b.word));
+							if (setCards.length) startStudy(setCards, `${shortDate(createdDate)} set`);
+						}
 			if (action === 'go-dashboard') setView('dashboard');
 			if (action === 'add-example') {
 				const stack = document.querySelector(`[data-examples="${button.dataset.kind}"]`);
@@ -691,8 +731,9 @@
 				const card = studyQueue[studyIndex];
 				card.studiedDates = Array.isArray(card.studiedDates) ? card.studiedDates : [];
 				if (!card.studiedDates.includes(dateKey())) {
+					const wasDueToday = isDue(card);
 					card.studiedDates.push(dateKey());
-					if (dayAge(card.createdDate) > 0) card.reviewCount = Math.min((card.reviewCount || 0) + 1, REVIEW_DAYS.length);
+					if (wasDueToday && dayAge(card.createdDate) > 0) card.reviewCount = Math.min((card.reviewCount || 0) + 1, REVIEW_DAYS.length);
 				}
 				saveCards();
 				if (!await saveCardToCloud(card)) showToast('Study history saved here; cloud sync failed.');
